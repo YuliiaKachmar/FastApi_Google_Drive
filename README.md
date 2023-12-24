@@ -8,11 +8,11 @@ Welcome to FastApi_Google_Drive! This is a FastAPI-based web application designe
  - python app.py
 
 ## Endpoints:
-/: Home page
-/welcome: Welcome page
-/login: Initiates OAuth login process
-/auth: OAuth authentication callback
-/files: File listing page
-/create_element: Creates a new file element
-/delete_file/{file_id}: Deletes a file
-/logout: User logout
+- /: Home page
+- /welcome: Welcome page
+- /login: Initiates OAuth login process
+- /auth: OAuth authentication callback
+- /files: File listing page
+- /create_element: Creates a new file element
+- /delete_file/{file_id}: Deletes a file
+- /logout: User logout
