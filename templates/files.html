@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Drive Files</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+</head>
+<body>
+    <h1>Google Drive Files</h1>
+
+    <ul>
+        {% for file in folder_structure %}
+            <li>
+                {{ file.name }}
+                <button type="button" onclick="confirmAndDelete('{{ file.id }}', '{{ file.mimeType }}')">
+                    {% if file.mimeType == 'application/vnd.google-apps.folder' %}
+                        Delete Folder
+                    {% else %}
+                        Delete File
+                    {% endif %}
+                </button>
+                {% if file.mimeType == 'application/vnd.google-apps.folder' %}
+                    <!-- Recursive call to handle subfolders -->
+                    <button type="button" onclick="createNewElement('{{ file.id }}')">Create Element</button>
+                    <ul>
+                        {% for subfile in file.children %}
+                            <li>
+                                {{ subfile.name }}
+                                <button type="button" onclick="confirmAndDelete('{{ subfile.id }}', '{{ subfile.mimeType }}')">
+                                    {% if subfile.mimeType == 'application/vnd.google-apps.folder' %}
+                                        Delete Folder
+                                    {% else %}
+                                        Delete File
+                                    {% endif %}
+                                </button>
+
+                                {% if subfile.mimeType == 'application/vnd.google-apps.folder' %}
+                                    <!-- Recursive call to handle subfolders -->
+                                    <button type="button" onclick="createNewElement('{{ file.id }}')">Create Element</button>
+                                    <ul>
+                                        {% for subsubfile in subfile.children %}
+                                            <li>
+                                                {{ subsubfile.name }}
+                                                <button type="button" onclick="confirmAndDelete('{{ subsubfile.id }}', '{{ subsubfile.mimeType }}')">
+                                                    {% if subsubfile.mimeType == 'application/vnd.google-apps.folder' %}
+                                                        Delete Folder
+                                                    {% else %}
+                                                        Delete File
+                                                    {% endif %}
+                                                </button>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
+    <script>
+        function render_file(file) {
+            let html = `
+                <li>
+                    ${file.name}
+                    <button type="button" onclick="confirmAndDelete('${file.id}', '${file.mimeType}')">
+                        ${file.mimeType == 'application/vnd.google-apps.folder' ? 'Delete Folder' : 'Delete File'}
+                    </button>
+            `;
+
+            if (file.mimeType == 'application/vnd.google-apps.folder' && file.children && file.children.length > 0) {
+                html += `
+                    <!-- Recursive call to handle subfolders -->
+                    <button type="button" onclick="createNewElement('${file.id}')">Create Element</button>
+                    <ul>
+                `;
+
+                file.children.forEach(subfile => {
+                    html += render_file(subfile);
+                });
+
+                html += `</ul>`;
+            }
+
+            html += `</li>`;
+            return html;
+        }
+
+
+        async function confirmAndDelete(fileId, mimeType) {
+            const confirmationMessage = `Are you sure you want to delete this ${mimeType == 'application/vnd.google-apps.folder' ? 'folder' : 'file'}?`;
+
+            if (confirm(confirmationMessage)) {
+                try {
+                    const response = await fetch(`/delete_file/${fileId}`, {
+                        method: 'DELETE',
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    window.location.reload(); // Refresh the page
+                } catch (error) {
+                    // Handle errors or show an error message
+                    console.error('Error:', error);
+                }
+            }
+        }
+
+        async function createNewElement(parentId) {
+            const elementType = prompt("Enter the element type (file or folder):");
+            const elementName = prompt("Enter the element name:");
+
+            if (elementType && elementName) {
+                try {
+                    const response = await fetch('/create_element', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            parent_id: parentId,
+                            element_name: elementName,
+                            element_type: elementType,
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    window.location.reload(); // Refresh the page
+                } catch (error) {
+                    console.error('Error creating element:', error);
+                }
+            } else {
+                console.log('Element creation canceled.');
+            }
+        }
+    </script>
+</body>
+</html>
